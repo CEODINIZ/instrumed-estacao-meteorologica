@@ -1,0 +1,148 @@
+//codigo fonte da estacao
+
+#include <LiquidCrystal_PCF8574.h>
+//#iclude <LiquidCrystal_I2C.h>
+constexpr int lcd_address = 0x3F;
+constexpr int lcd_columns = 16;
+constexpr int lcd_rows    = 2;
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
+#include <LiquidCrystal_PCF8574.h>
+//#iclude <LiquidCrystal_I2C.h>
+int leitura_ad;
+float voltagem;
+float temperatura;
+
+
+LiquidCrystal_PCF8574 lcd(lcd_address);
+Adafruit_BMP085 bmp;
+
+#include <DHT.h>
+#include <DHT_U.h>
+
+
+#define DHT_pin 2
+//constexpr int DHT_pin = 2
+
+//Cria um objeto do tipo DHT
+DHT dht(DHT_pin, DHT22);
+float umid, temp;
+
+
+
+
+void setup() {
+  lcd.begin(lcd_columns, lcd_rows);
+  //lcd.init();
+  lcd.setBacklight(100);
+  Serial.begin(9600);
+  dht.begin();
+  analogReference(INTERNAL);
+  pinMode(A0, INPUT);
+
+  if (bmp.begin()) {
+    Serial.println(" OK : BMP encontrado");
+  }
+
+  else {
+    Serial.println("Erro: BMP nao encontrado");
+  }
+
+
+}
+
+
+void loop() {
+
+  //DHT-22-----------------------------
+  //umidade
+
+  umid = dht.readHumidity(); //
+  temp = dht.readTemperature();
+  umid = 1.00 * umid + 0.00; //Calibracao
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Umidade");
+  lcd.setCursor(0, 1);
+  lcd.print(umid);
+
+
+  //sensor de temperatura do DHT-22
+
+  Serial.print("Umidade     = ");
+  Serial.println(umid);
+  Serial.print("Temperatura = ");
+  Serial.println(temp);
+  delay(2000);
+
+  //Adafruit_BMP085------------------------
+  //pressao
+  float pressao, temperatura;
+
+  pressao = bmp.readPressure() / 100;
+  temperatura = bmp.readTemperature();
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("Pressao");
+  lcd.setCursor(0, 0);
+  lcd.print(pressao);
+
+
+  Serial.print("\n\n");
+  Serial.print("Pressao     = ");
+  Serial.print(pressao);
+  Serial.println(" hPa");
+  //sensor de temperatura do Adafruit_BMP085
+  Serial.print("Temperatura  = ");
+  Serial.print(temperatura);
+  Serial.println(" C");
+
+  delay(2000);
+
+  //luminosidade--------------------------
+
+  int bin;
+  double tensao, res, lum;
+
+
+  bin = analogRead(A1);
+  tensao = bin * 1.1 / 1023;
+  res = 1000 * (5.0 / tensao + 1);
+  lum = pow(10, 5 - log10(res));
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("luminosidade");
+  lcd.setCursor(0, 1);
+  lcd.print(lum);
+  Serial.print(" \nDado      =  ");
+  Serial.print(bin);
+  Serial.print("\nResistencia = ");
+  Serial.print(res);
+  Serial.print("\nLuminosidade = ");
+  Serial.println(lum);
+  delay(2000);
+
+
+  //Sensor de temperatura ----------------------
+
+  leitura_ad = analogRead(A0);
+  //calcula a tensao convertida e a temperatura
+  voltagem = leitura_ad * (1.1 / 1023);
+  temperatura = 100 * voltagem;
+  Serial.print("\n\n");  // pula 2 linhas
+  Serial.print("Dado               = ");
+  Serial.println(leitura_ad);
+  Serial.print("Voltagem");
+  Serial.print("Temperatura [°C] = ");
+  Serial.println(temperatura);
+  //aguarda uns instantes
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Temperatura");
+  lcd.setCursor(0, 1);
+  lcd.print(temperatura);
+  delay(2000);
+
+}
+
